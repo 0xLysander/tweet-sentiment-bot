@@ -1,0 +1,26 @@
+{
+  "name": "tweet-sentiment-bot",
+  "version": "1.0.0",
+  "description": "A Twitter bot that analyzes sentiment of tweets",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "twitter",
+    "sentiment",
+    "bot",
+    "nlp"
+  ],
+  "author": "0xLysander",
+  "license": "MIT",
+  "dependencies": {
+    "twitter-api-v2": "^1.12.0",
+    "sentiment": "^5.0.2",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
+}
