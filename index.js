@@ -25,12 +25,58 @@ class TweetSentimentBot {
     }
   }
 
+  async setupStreamRules() {
+    const rules = [
+      {
+        value: 'sentiment analysis OR #sentiment OR mood OR feeling',
+        tag: 'sentiment-related'
+      }
+    ];
+
+    try {
+      const existingRules = await this.rwClient.v2.streamRules();
+      if (existingRules.data?.length) {
+        await this.rwClient.v2.updateStreamRules({
+          delete: { ids: existingRules.data.map(rule => rule.id) }
+        });
+      }
+
+      await this.rwClient.v2.updateStreamRules({
+        add: rules
+      });
+      console.log('Stream rules updated successfully');
+    } catch (error) {
+      console.error('Error setting up stream rules:', error);
+    }
+  }
+
+  async startStream() {
+    const stream = await this.rwClient.v2.searchStream({
+      'tweet.fields': ['author_id', 'public_metrics', 'context_annotations'],
+      'user.fields': ['username']
+    });
+
+    stream.on('data', async (tweet) => {
+      console.log(`New tweet from @${tweet.includes?.users?.[0]?.username}: ${tweet.data.text}`);
+      
+      const sentiment = await this.analyzeTweet(tweet.data.text);
+      if (sentiment) {
+        console.log(`Sentiment: ${sentiment.label} (score: ${sentiment.score})`);
+      }
+    });
+
+    stream.on('error', (error) => {
+      console.error('Stream error:', error);
+    });
+  }
+
   async start() {
     console.log('Tweet Sentiment Bot starting...');
     
-    // For now, just log that we're ready
-    // TODO: Implement actual tweet monitoring and response logic
-    console.log('Bot is ready to analyze tweets!');
+    await this.setupStreamRules();
+    await this.startStream();
+    
+    console.log('Bot is now monitoring tweets for sentiment analysis!');
   }
 }
 
