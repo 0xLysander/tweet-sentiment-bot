@@ -25,6 +25,26 @@ class TweetSentimentBot {
     }
   }
 
+  async replyWithSentiment(tweetId, sentiment) {
+    try {
+      const emoji = this.sentimentAnalyzer.getSentimentEmoji(sentiment.label);
+      let replyText;
+
+      if (sentiment.label === 'positive') {
+        replyText = `${emoji} This tweet has a positive sentiment! (Score: ${sentiment.score})`;
+      } else if (sentiment.label === 'negative') {
+        replyText = `${emoji} This tweet has a negative sentiment. (Score: ${sentiment.score})`;
+      } else {
+        replyText = `${emoji} This tweet has a neutral sentiment. (Score: ${sentiment.score})`;
+      }
+
+      await this.rwClient.v2.reply(replyText, tweetId);
+      console.log(`Replied to tweet ${tweetId} with sentiment analysis`);
+    } catch (error) {
+      console.error('Error replying to tweet:', error);
+    }
+  }
+
   async setupStreamRules() {
     const rules = [
       {
@@ -62,6 +82,9 @@ class TweetSentimentBot {
       const sentiment = await this.analyzeTweet(tweet.data.text);
       if (sentiment) {
         console.log(`Sentiment: ${sentiment.label} (score: ${sentiment.score})`);
+        
+        // Reply with sentiment analysis
+        await this.replyWithSentiment(tweet.data.id, sentiment);
       }
     });
 
