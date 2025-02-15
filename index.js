@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { TwitterApi } = require('twitter-api-v2');
 const SentimentAnalyzer = require('./sentiment');
+const logger = require('./logger');
 
 class TweetSentimentBot {
   constructor() {
@@ -18,9 +19,10 @@ class TweetSentimentBot {
   async analyzeTweet(tweetText) {
     try {
       const sentiment = this.sentimentAnalyzer.analyze(tweetText);
+      logger.debug('Sentiment analysis completed', { text: tweetText, sentiment });
       return sentiment;
     } catch (error) {
-      console.error('Error analyzing sentiment:', error);
+      logger.error('Error analyzing sentiment', { error: error.message, text: tweetText });
       return null;
     }
   }
@@ -39,9 +41,9 @@ class TweetSentimentBot {
       }
 
       await this.rwClient.v2.reply(replyText, tweetId);
-      console.log(`Replied to tweet ${tweetId} with sentiment analysis`);
+      logger.info('Replied to tweet with sentiment analysis', { tweetId, replyText });
     } catch (error) {
-      console.error('Error replying to tweet:', error);
+      logger.error('Error replying to tweet', { error: error.message, tweetId });
     }
   }
 
@@ -64,9 +66,9 @@ class TweetSentimentBot {
       await this.rwClient.v2.updateStreamRules({
         add: rules
       });
-      console.log('Stream rules updated successfully');
+      logger.info('Stream rules updated successfully');
     } catch (error) {
-      console.error('Error setting up stream rules:', error);
+      logger.error('Error setting up stream rules', { error: error.message });
     }
   }
 
@@ -77,29 +79,42 @@ class TweetSentimentBot {
     });
 
     stream.on('data', async (tweet) => {
-      console.log(`New tweet from @${tweet.includes?.users?.[0]?.username}: ${tweet.data.text}`);
+      const username = tweet.includes?.users?.[0]?.username || 'unknown';
+      logger.info('New tweet received', { 
+        username, 
+        tweetId: tweet.data.id, 
+        text: tweet.data.text 
+      });
       
       const sentiment = await this.analyzeTweet(tweet.data.text);
       if (sentiment) {
-        console.log(`Sentiment: ${sentiment.label} (score: ${sentiment.score})`);
+        logger.info('Tweet sentiment analyzed', { 
+          tweetId: tweet.data.id, 
+          sentiment: sentiment.label, 
+          score: sentiment.score 
+        });
         
-        // Reply with sentiment analysis
         await this.replyWithSentiment(tweet.data.id, sentiment);
       }
     });
 
     stream.on('error', (error) => {
-      console.error('Stream error:', error);
+      logger.error('Stream error occurred', { error: error.message });
     });
   }
 
   async start() {
-    console.log('Tweet Sentiment Bot starting...');
+    logger.info('Tweet Sentiment Bot starting...');
     
-    await this.setupStreamRules();
-    await this.startStream();
-    
-    console.log('Bot is now monitoring tweets for sentiment analysis!');
+    try {
+      await this.setupStreamRules();
+      await this.startStream();
+      
+      logger.info('Bot is now monitoring tweets for sentiment analysis!');
+    } catch (error) {
+      logger.error('Failed to start bot', { error: error.message });
+      throw error;
+    }
   }
 }
 
