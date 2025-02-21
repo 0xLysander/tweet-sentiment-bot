@@ -3,6 +3,7 @@ const { TwitterApi } = require('twitter-api-v2');
 const SentimentAnalyzer = require('./sentiment');
 const logger = require('./logger');
 const config = require('./config');
+const database = require('./database');
 
 class TweetSentimentBot {
   constructor() {
@@ -68,10 +69,11 @@ class TweetSentimentBot {
     try {
       if (!this.shouldReply(sentiment)) {
         logger.debug('Skipping reply due to filters', { tweetId, sentiment: sentiment.label });
-        return;
+        return false;
       }
 
       const replyText = this.getReplyText(sentiment);
+      this.lastReplyText = replyText;
       
       await this.rwClient.v2.reply(replyText, tweetId);
       this.replyCount++;
@@ -81,8 +83,11 @@ class TweetSentimentBot {
         replyText, 
         replyCount: this.replyCount 
       });
+      
+      return true;
     } catch (error) {
       logger.error('Error replying to tweet', { error: error.message, tweetId });
+      return false;
     }
   }
 
@@ -128,7 +133,19 @@ class TweetSentimentBot {
           score: sentiment.score 
         });
         
-        await this.replyWithSentiment(tweet.data.id, sentiment);
+        const replied = await this.replyWithSentiment(tweet.data.id, sentiment);
+        
+        // Save to database
+        await database.saveTweet({
+          id: tweet.data.id,
+          authorId: tweet.data.author_id,
+          username: username,
+          text: tweet.data.text,
+          sentimentScore: sentiment.score,
+          sentimentLabel: sentiment.label,
+          replied: replied,
+          replyText: replied ? this.lastReplyText : null
+        });
       }
     });
 
