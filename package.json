@@ -4,8 +4,14 @@
   "description": "A Twitter bot that analyzes sentiment of tweets",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node cli.js start",
+    "dev": "nodemon index.js",
+    "stats": "node cli.js stats",
+    "trends": "node cli.js trends", 
+    "config": "node cli.js config"
+  },
+  "bin": {
+    "tweet-sentiment-bot": "./cli.js"
   },
   "keywords": [
     "twitter",

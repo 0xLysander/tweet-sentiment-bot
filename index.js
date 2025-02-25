@@ -169,5 +169,10 @@ class TweetSentimentBot {
   }
 }
 
-const bot = new TweetSentimentBot();
-bot.start().catch(console.error);
+// Only start if this file is run directly
+if (require.main === module) {
+  const bot = new TweetSentimentBot();
+  bot.start().catch(console.error);
+}
+
+module.exports = TweetSentimentBot;
