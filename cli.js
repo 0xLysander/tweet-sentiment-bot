@@ -5,6 +5,7 @@ const database = require('./database');
 const logger = require('./logger');
 const analytics = require('./analytics');
 const TweetSentimentBot = require('./index');
+const WebhookServer = require('./webhook');
 
 program
   .name('tweet-sentiment-bot')
@@ -136,6 +137,38 @@ program
     } catch (error) {
       logger.error('Error generating trends', { error: error.message });
       console.error('Failed to generate trends:', error.message);
+    }
+  });
+
+program
+  .command('webhook')
+  .description('Start webhook server for external integrations')
+  .option('-p, --port <number>', 'Port to run webhook server on', '3000')
+  .action(async (options) => {
+    try {
+      const port = parseInt(options.port);
+      const webhookServer = new WebhookServer(port);
+      
+      await webhookServer.start();
+      console.log(`🌐 Webhook server started on port ${port}`);
+      console.log('Available endpoints:');
+      console.log('  GET  /health - Health check');
+      console.log('  GET  /api/stats - Bot statistics');
+      console.log('  GET  /api/trends - Sentiment trends');
+      console.log('  GET  /api/recent-tweets - Recent tweets');
+      console.log('  POST /webhook/notification - External notifications');
+      console.log('  POST /api/update-analytics - Manual analytics update');
+      
+      // Keep the process running
+      process.on('SIGINT', () => {
+        console.log('\n👋 Shutting down webhook server...');
+        process.exit(0);
+      });
+      
+    } catch (error) {
+      logger.error('Error starting webhook server', { error: error.message });
+      console.error('Failed to start webhook server:', error.message);
+      process.exit(1);
     }
   });
 

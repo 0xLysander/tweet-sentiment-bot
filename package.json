@@ -8,6 +8,7 @@
     "dev": "nodemon index.js",
     "stats": "node cli.js stats",
     "trends": "node cli.js trends", 
+    "webhook": "node cli.js webhook",
     "config": "node cli.js config"
   },
   "bin": {

@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  tweet-sentiment-bot:
+    build: .
+    container_name: tweet-sentiment-bot
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - TWITTER_BEARER_TOKEN=${TWITTER_BEARER_TOKEN}
+      - TWITTER_API_KEY=${TWITTER_API_KEY}
+      - TWITTER_API_SECRET=${TWITTER_API_SECRET}
+      - TWITTER_ACCESS_TOKEN=${TWITTER_ACCESS_TOKEN}
+      - TWITTER_ACCESS_TOKEN_SECRET=${TWITTER_ACCESS_TOKEN_SECRET}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command: npm start
+    
+  webhook-only:
+    build: .
+    container_name: tweet-sentiment-webhook
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command: npm run webhook
+    profiles:
+      - webhook-only
+
+networks:
+  default:
+    name: tweet-sentiment-network
